@@ -543,7 +543,8 @@ body{
    轉輪、A·B·C、Day 文字則以 0.685 等比縮小後去背回貼，維持正圓與不變形；四角白底重新去背。
    卡片上緣 14px、高 229px → top 5.364% / height 87.74%；
    四角白底改用「白色去背 + 反推 alpha 還原前景色」，不再外擴切除，金框厚度完整保留。
-   顯示 794.5×127px（×0.9 後視覺 715×114.3px）；面板 bottom:31.5px → 下框線落在 y=688.5。 */
+   顯示 794.5×127px（×0.9 後視覺 715×114.3px）；面板 bottom:12px → 下框線落在 y=708，
+   與結算統計框下框線（top 570 + 高 138 = 708）切齊。 */
 .daypanel{padding:0;background:none;border:0;
   /* z-index 高於狀態列（12）：膠囊下緣與天數表上緣切齊後，箭頭標記會伸進膠囊的帶狀區域，
      不拉高的話第 3～5 天的箭頭會整支被膠囊蓋掉 */
@@ -615,10 +616,10 @@ body{
 
 /* ============ 底部狀態列 ============ */
 .statusbar{
-  /* 下邊框貼齊天數表上邊框：天數表可視上緣在 y=574.2（.days 有 scale(.9)），
-     膠囊以下緣為縮放基準，故 bottom = 720 - 574.2 ≈ 146 就會剛好切齊。
+  /* 下邊框貼齊天數表上邊框：天數表下移到 y=708 後，可視上緣在 y=593.7
+     （708 − 127×0.9 = 593.7），膠囊以下緣為縮放基準，故 bottom = 720 − 593.7 ≈ 126.5。
      z-index 拉到 12，壓在天數表（z-index 9）之上 */
-  position:absolute;left:50%;bottom:146px;
+  position:absolute;left:50%;bottom:126.5px;
   transform:translateX(-50%) scale(1.1);       /* 提示膠囊等比放大 10% */
   transform-origin:center bottom;
   display:flex;align-items:center;gap:14px;z-index:12;
@@ -791,7 +792,7 @@ body{
     <button class="btn-s" id="btnResetDay">重置天數</button>
   </div>
   <!-- 天數表：下框線與結算統計框下框線同一條基準線（statpanel top 592 + 高 116 → y 708 → bottom 12） -->
-  <div class="hud daypanel" id="dayPanel" style="left:50%;bottom:31.5px;transform:translateX(-50%)">
+  <div class="hud daypanel" id="dayPanel" style="left:50%;bottom:12px;transform:translateX(-50%)">
     <div class="days" id="dayBtns"></div>
   </div>
 
