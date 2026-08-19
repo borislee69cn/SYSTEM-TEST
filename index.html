@@ -41,7 +41,8 @@ body{
 
 /* ============ 結算統計框 ============ */
 .statpanel{
-  position:absolute;left:56px;right:56px;top:570px;height:138px;z-index:12;
+  /* 14：需高於天數表（13），否則淡出中的天數表會在轉場那 0.3 秒蓋住結算框 */
+  position:absolute;left:56px;right:56px;top:570px;height:138px;z-index:14;
   opacity:0;visibility:hidden;transform:translateY(26px) scale(.97);
   transition:opacity .38s ease, transform .48s cubic-bezier(.2,1.3,.4,1), visibility .38s;
   border-radius:20px;border:2px solid var(--gold-2);
@@ -535,6 +536,9 @@ body{
    四角白底改用「白色去背 + 反推 alpha 還原前景色」，不再外擴切除，金框厚度完整保留。
    顯示 794.5×127px（×0.9 後視覺 715×114.3px）；面板 bottom:31.5px → 下框線落在 y=688.5。 */
 .daypanel{padding:0;background:none;border:0;
+  /* z-index 高於狀態列（12）：膠囊下緣與天數表上緣切齊後，箭頭標記會伸進膠囊的帶狀區域，
+     不拉高的話第 3～5 天的箭頭會整支被膠囊蓋掉 */
+  z-index:13;
   transition:opacity .3s ease, transform .34s ease, visibility .3s}
 .daypanel.hide{opacity:0;visibility:hidden;transform:translateX(-50%) translateY(10px)}
 .days{
@@ -560,6 +564,23 @@ body{
   filter:drop-shadow(0 3px 7px rgba(0,0,0,.45));
 }
 .day.done::before{opacity:1}
+/* 箭頭標記所指的那張卡：金邊呼吸發光。
+   .day 的框正好對齊素材上的卡片外框（含金邊），所以 box-shadow 從 0 spread 起算
+   就會緊貼金邊外緣，看起來像金框本身在亮，而不是外面多一圈。
+   週期與 dayMarkPulse 同為 1.15s，兩者同時掛上所以相位一致。 */
+.day.current{
+  border-radius:11px;
+  animation:dayFrameGlow 1.15s ease-in-out infinite;
+}
+/* 全部走 inset：光只畫在卡片自己的 border box 內，不會溢到隔壁卡或面板外。
+   外擴式的 box-shadow（不帶 inset）在這裡不能用——卡片之間只隔幾 px，
+   任何模糊半徑都會糊到鄰卡上。 */
+@keyframes dayFrameGlow{
+  0%,100%{box-shadow:inset 0 0 0 1px rgba(255,240,190,.15),
+                     inset 0 0 5px 0 rgba(255,206,96,.1)}
+  50%    {box-shadow:inset 0 0 0 4px rgba(255,248,205,1),
+                     inset 0 0 20px 5px rgba(255,198,72,.8)}
+}
 .day.done::after{opacity:1;animation:tickPop .42s cubic-bezier(.2,1.6,.4,1)}
 @keyframes tickPop{0%{transform:translateY(-50%) scale(.35);opacity:0}
   60%{transform:translateY(-50%) scale(1.12)}100%{transform:translateY(-50%) scale(1);opacity:1}}
@@ -568,7 +589,8 @@ body{
    所以只要跟著 DAY_CELL 給 left 就會自動對準；尺寸依附圖紅框（等比內縮至框內）。
    top 為負值 → 浮在天數表上緣之上，箭尖略壓進卡片標頭。 */
 .day-mark{
-  position:absolute;left:50%;top:-33px;width:36px;height:46px;
+  /* 縮小 30%：36×46 → 25×32；top 一併從 -33 提到 -19，讓箭尖仍停在原本的深度（+13px） */
+  position:absolute;left:50%;top:-19px;width:25px;height:32px;
   transform:translateX(-50%);transform-origin:50% 100%;
   background:var(--day-mark) center/100% 100% no-repeat;
   pointer-events:none;z-index:6;
@@ -584,9 +606,10 @@ body{
 
 /* ============ 底部狀態列 ============ */
 .statusbar{
-  /* 下邊框貼齊畫面底部：膠囊以下緣為縮放基準，bottom:0 → 視覺下緣 y=720，
+  /* 下邊框貼齊天數表上邊框：天數表可視上緣在 y=574.2（.days 有 scale(.9)），
+     膠囊以下緣為縮放基準，故 bottom = 720 - 574.2 ≈ 146 就會剛好切齊。
      z-index 拉到 12，壓在天數表（z-index 9）之上 */
-  position:absolute;left:50%;bottom:0;
+  position:absolute;left:50%;bottom:146px;
   transform:translateX(-50%) scale(1.1);       /* 提示膠囊等比放大 10% */
   transform-origin:center bottom;
   display:flex;align-items:center;gap:14px;z-index:12;
@@ -1471,7 +1494,8 @@ function renderDays(){
   for(let d=1; d<=7; d++){
     const el = document.createElement("div");
     const done = claimedDays.has(d);
-    el.className = "day" + (done ? " done" : "");
+    // current = 箭頭標記所指的那一天，金邊會跟著標記一起呼吸發光
+    el.className = "day" + (done ? " done" : "") + (d === state.day ? " current" : "");
     const c = DAY_CELL[d-1];
     el.style.left = c.l + "%"; el.style.width = c.w + "%";
     const desc = `第 ${d} 天：${d<=3?"A 輪 → 等級加成"
