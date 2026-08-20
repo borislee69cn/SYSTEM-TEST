@@ -2333,21 +2333,25 @@ $("#hubA").onclick = ()=>doSpin("A");
 $("#hubB").onclick = ()=>doSpin("B");
 $("#hubC").onclick = ()=>doSpin("C");
 
+/* 開頁就先把音檔解碼好（AudioContext 建立時是 suspended，decodeAudioData 不需要手勢）。
+   若等到按下按鍵才解碼，1.7MB 的素材要跑 1～2 秒，BGM 會延遲後才突然出現，
+   淡入等於被吃掉——這是「按了按鍵卻沒有淡入感」的真正原因。 */
+Audio5.preload();
+
+const BGM_FADE_IN = 1.2;           // 淡入秒數
 $("#btnGo").onclick = ()=>{
   ac();
-  /* Activity_Open：瀏覽器自動播放限制需由手勢啟動，「前往參加」即為該手勢 */
-  Audio5.unlock().then(()=> Audio5.startBgm(state.day, 0.6));
+  /* Activity_Open：唯一的 BGM 啟動點。瀏覽器自動播放限制需由手勢觸發，
+     「前往參加」就是那個手勢；素材已預先解碼，unlock() 會在同一個微任務內完成 */
+  Audio5.unlock().then(()=> Audio5.startBgm(state.day, BGM_FADE_IN));
   $("#maskIntro").classList.remove("show");
   resetRound();
 };
-/* 若玩家用其他方式關掉開場彈窗，第一次任何互動也補啟一次 BGM */
-window.addEventListener("pointerdown", function once(){
-  Audio5.unlock().then(()=>{ if(!Audio5.isPlaying) Audio5.startBgm(state.day, 0.6); });
-  window.removeEventListener("pointerdown", once);
-}, { once:true });
-/* 分頁切走時淡出、切回淡入，避免背景頁一直出聲 */
+/* 分頁切走時靜音、切回恢復。恢復時要看使用者自己的靜音設定，
+   否則切分頁回來會把玩家按下的「全部靜音」解掉 */
 document.addEventListener("visibilitychange", ()=>{
-  Audio5.setVolume("master", document.hidden ? 0 : 1);
+  const on = !document.hidden && !(typeof auState !== "undefined" && auState.mute);
+  Audio5.setVolume("master", on ? 1 : 0);
 });
 $("#btnRule").onclick = ()=> $("#maskRule").classList.add("show");
 /* ---- 音樂音效選單 ---- */
